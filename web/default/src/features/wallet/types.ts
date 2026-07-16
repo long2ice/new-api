@@ -59,6 +59,9 @@ export type WaffoPancakePaymentResponse = ApiResponse<
     }
   | string
 >
+export type BepusdtPaymentResponse = ApiResponse<
+  { payment_url?: string; order_id?: string; trade_id?: string } | string
+>
 
 /**
  * Creem product configuration
@@ -150,6 +153,10 @@ export interface TopupInfo {
   enable_waffo_pancake_topup?: boolean
   /** Minimum topup amount for Waffo Pancake */
   waffo_pancake_min_topup?: number
+  /** Whether BEPUSDT topup is enabled */
+  enable_bepusdt_topup?: boolean
+  /** Minimum topup amount for BEPUSDT */
+  bepusdt_min_topup?: number
   /** Whether redemption code usage is enabled */
   enable_redemption?: boolean
   /** Whether compliance confirmation has been completed */
@@ -200,6 +207,14 @@ export interface WaffoPaymentRequest {
  * Waffo Pancake payment request parameters
  */
 export interface WaffoPancakePaymentRequest {
+  /** Topup amount */
+  amount: number
+}
+
+/**
+ * BEPUSDT payment request parameters
+ */
+export interface BepusdtPaymentRequest {
   /** Topup amount */
   amount: number
 }

@@ -70,6 +70,7 @@ const PAYMENT_TYPE_ICON_NAMES: Record<string, string> = {
   alipay: 'SiAlipay',
   stripe: 'SiStripe',
   waffo_pancake: 'LuCreditCard',
+  bepusdt: 'LuCoins',
   wxpay: 'SiWechat',
 }
 
@@ -108,6 +109,12 @@ export function PaymentMethodDialog({
       label: 'Waffo Pancake (waffo_pancake)',
       name: 'Waffo Pancake',
       value: 'waffo_pancake',
+    },
+    {
+      iconName: 'LuCoins',
+      label: `${t('BEPUSDT')} (bepusdt)`,
+      name: t('BEPUSDT'),
+      value: 'bepusdt',
     },
   ]
   const getPaymentTypeOption = (value: string) =>
@@ -249,7 +256,7 @@ export function PaymentMethodDialog({
                 </FormControl>
                 <FormDescription className='leading-relaxed'>
                   {t(
-                    'Used to decide the payment flow. Built-in keys include stripe for Stripe and waffo_pancake for Waffo Pancake; other values are sent to Epay as the type parameter.'
+                    'Used to decide the payment flow. Built-in keys include stripe for Stripe, waffo_pancake for Waffo Pancake, and bepusdt for BEPUSDT; other values are sent to Epay as the type parameter.'
                   )}
                 </FormDescription>
                 <FormMessage />

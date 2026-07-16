@@ -201,6 +201,7 @@ func main() {
 
 	InjectUmamiAnalytics()
 	InjectGoogleAnalytics()
+	InjectChatwoot()
 
 	// 设置路由
 	router.SetRouter(server, router.ThemeAssets{
@@ -291,6 +292,30 @@ func InjectGoogleAnalytics() {
 	placeholder := []byte("<!--Google Analytics-->\n")
 	indexPage = bytes.ReplaceAll(indexPage, placeholder, analyticsInject)
 	classicIndexPage = bytes.ReplaceAll(classicIndexPage, placeholder, analyticsInject)
+}
+
+func InjectChatwoot() {
+	// Chatwoot website widget (public websiteToken)
+	chatwootInject := []byte(`<script>
+  (function(d,t) {
+    var BASE_URL="https://app.chatwoot.com";
+    var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+    g.src=BASE_URL+"/packs/js/sdk.js";
+    g.async = true;
+    s.parentNode.insertBefore(g,s);
+    g.onload=function(){
+      window.chatwootSDK.run({
+        websiteToken: 'fHWnAnTL2zzDLP43tPYecckK',
+        baseUrl: BASE_URL
+      })
+    }
+  })(document,"script");
+</script>
+<!--Chatwoot QuantumNous-->
+`)
+	placeholder := []byte("<!--Chatwoot-->\n")
+	indexPage = bytes.ReplaceAll(indexPage, placeholder, chatwootInject)
+	classicIndexPage = bytes.ReplaceAll(classicIndexPage, placeholder, chatwootInject)
 }
 
 func InitResources() error {

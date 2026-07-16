@@ -152,6 +152,16 @@ const BILLING_SECTIONS = [
           CreemWebhookSecret: settings.CreemWebhookSecret,
           CreemTestMode: settings.CreemTestMode,
           CreemProducts: settings.CreemProducts,
+          BepusdtEnabled: settings.BepusdtEnabled ?? false,
+          BepusdtUrl: settings.BepusdtUrl ?? '',
+          BepusdtApiKey: settings.BepusdtApiKey ?? '',
+          BepusdtFiat: settings.BepusdtFiat ?? 'USD',
+          BepusdtCurrencies: settings.BepusdtCurrencies ?? '',
+          BepusdtTradeType: settings.BepusdtTradeType ?? '',
+          BepusdtUnitPrice: settings.BepusdtUnitPrice ?? 1,
+          BepusdtMinTopUp: settings.BepusdtMinTopUp ?? 1,
+          BepusdtNotifyUrl: settings.BepusdtNotifyUrl ?? '',
+          BepusdtReturnUrl: settings.BepusdtReturnUrl ?? '',
         }}
         waffoDefaultValues={{
           WaffoEnabled: settings.WaffoEnabled ?? false,

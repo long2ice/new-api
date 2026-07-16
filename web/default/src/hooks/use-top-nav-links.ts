@@ -100,5 +100,12 @@ export function useTopNavLinks(): TopNavLink[] {
     links.push({ title: t('About'), href: '/about' })
   }
 
+  // App download
+  links.push({
+    title: t('Download App'),
+    href: 'https://app.iping.live',
+    external: true,
+  })
+
   return links
 }

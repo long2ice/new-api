@@ -47,6 +47,7 @@ const PAYMENT_TYPE_ICON_NAMES: Record<string, string> = {
   alipay: 'SiAlipay',
   stripe: 'SiStripe',
   waffo_pancake: 'LuCreditCard',
+  bepusdt: 'LuCoins',
   wxpay: 'SiWechat',
 }
 
@@ -95,6 +96,14 @@ export function PaymentMethodsVisualEditor({
         icon: getDefaultIconName('waffo_pancake'),
         name: 'Waffo Pancake',
         type: 'waffo_pancake',
+      },
+    },
+    {
+      name: t('BEPUSDT'),
+      template: {
+        icon: getDefaultIconName('bepusdt'),
+        name: 'BEPUSDT',
+        type: 'bepusdt',
       },
     },
     {

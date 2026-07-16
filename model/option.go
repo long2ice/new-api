@@ -116,6 +116,16 @@ func InitOptionMap() {
 	common.OptionMap["WaffoPancakeMinTopUp"] = strconv.Itoa(setting.WaffoPancakeMinTopUp)
 	common.OptionMap["WaffoPancakeStoreID"] = setting.WaffoPancakeStoreID
 	common.OptionMap["WaffoPancakeProductID"] = setting.WaffoPancakeProductID
+	common.OptionMap["BepusdtEnabled"] = strconv.FormatBool(setting.BepusdtEnabled)
+	common.OptionMap["BepusdtUrl"] = setting.BepusdtUrl
+	common.OptionMap["BepusdtApiKey"] = setting.BepusdtApiKey
+	common.OptionMap["BepusdtFiat"] = setting.BepusdtFiat
+	common.OptionMap["BepusdtCurrencies"] = setting.BepusdtCurrencies
+	common.OptionMap["BepusdtTradeType"] = setting.BepusdtTradeType
+	common.OptionMap["BepusdtUnitPrice"] = strconv.FormatFloat(setting.BepusdtUnitPrice, 'f', -1, 64)
+	common.OptionMap["BepusdtMinTopUp"] = strconv.Itoa(setting.BepusdtMinTopUp)
+	common.OptionMap["BepusdtNotifyUrl"] = setting.BepusdtNotifyUrl
+	common.OptionMap["BepusdtReturnUrl"] = setting.BepusdtReturnUrl
 	common.OptionMap["TopupGroupRatio"] = common.TopupGroupRatio2JSONString()
 	common.OptionMap["Chats"] = setting.Chats2JsonString()
 	common.OptionMap["AutoGroups"] = setting.AutoGroups2JsonString()
@@ -468,6 +478,26 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.WaffoPancakeUnitPrice, _ = strconv.ParseFloat(value, 64)
 	case "WaffoPancakeMinTopUp":
 		setting.WaffoPancakeMinTopUp, _ = strconv.Atoi(value)
+	case "BepusdtEnabled":
+		setting.BepusdtEnabled = value == "true"
+	case "BepusdtUrl":
+		setting.BepusdtUrl = value
+	case "BepusdtApiKey":
+		setting.BepusdtApiKey = value
+	case "BepusdtFiat":
+		setting.BepusdtFiat = value
+	case "BepusdtCurrencies":
+		setting.BepusdtCurrencies = value
+	case "BepusdtTradeType":
+		setting.BepusdtTradeType = value
+	case "BepusdtUnitPrice":
+		setting.BepusdtUnitPrice, _ = strconv.ParseFloat(value, 64)
+	case "BepusdtMinTopUp":
+		setting.BepusdtMinTopUp, _ = strconv.Atoi(value)
+	case "BepusdtNotifyUrl":
+		setting.BepusdtNotifyUrl = value
+	case "BepusdtReturnUrl":
+		setting.BepusdtReturnUrl = value
 	case "TopupGroupRatio":
 		err = common.UpdateTopupGroupRatioByJSONString(value)
 	case "GitHubClientId":

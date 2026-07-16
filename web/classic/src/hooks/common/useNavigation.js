@@ -64,10 +64,19 @@ export const useNavigation = (t, docsLink, headerNavModules) => {
         itemKey: 'about',
         to: '/about',
       },
+      {
+        text: t('App 下载'),
+        itemKey: 'app-download',
+        isExternal: true,
+        externalLink: 'https://app.iping.live',
+      },
     ];
 
     // 根据配置过滤导航链接
     return allLinks.filter((link) => {
+      if (link.itemKey === 'app-download') {
+        return true;
+      }
       if (link.itemKey === 'docs') {
         return docsLink && modules.docs;
       }

@@ -79,6 +79,7 @@ import {
   WaffoSettingsSection,
   type WaffoSettingsValues,
 } from './waffo-settings-section'
+import { BepusdtSettingsSection } from './bepusdt-settings-section'
 
 function isHttpOriginUrl(value: string) {
   const trimmed = value.trim()
@@ -176,6 +177,16 @@ const paymentSchema = z.object({
   WaffoPancakeMerchantID: z.string(),
   WaffoPancakePrivateKey: z.string(),
   WaffoPancakeReturnURL: z.string(),
+  BepusdtEnabled: z.boolean(),
+  BepusdtUrl: z.string(),
+  BepusdtApiKey: z.string(),
+  BepusdtFiat: z.string(),
+  BepusdtCurrencies: z.string(),
+  BepusdtTradeType: z.string(),
+  BepusdtUnitPrice: z.coerce.number().min(0),
+  BepusdtMinTopUp: z.coerce.number().min(1),
+  BepusdtNotifyUrl: z.string(),
+  BepusdtReturnUrl: z.string(),
 })
 
 type PaymentFormValues = z.infer<typeof paymentSchema>
@@ -457,6 +468,16 @@ export function PaymentSettingsSection({
       WaffoPancakeReturnURL: removeTrailingSlash(
         values.WaffoPancakeReturnURL.trim()
       ),
+      BepusdtEnabled: values.BepusdtEnabled,
+      BepusdtUrl: removeTrailingSlash(values.BepusdtUrl.trim()),
+      BepusdtApiKey: values.BepusdtApiKey.trim(),
+      BepusdtFiat: values.BepusdtFiat.trim() || 'USD',
+      BepusdtCurrencies: values.BepusdtCurrencies.trim(),
+      BepusdtTradeType: values.BepusdtTradeType.trim(),
+      BepusdtUnitPrice: values.BepusdtUnitPrice,
+      BepusdtMinTopUp: values.BepusdtMinTopUp,
+      BepusdtNotifyUrl: values.BepusdtNotifyUrl.trim(),
+      BepusdtReturnUrl: values.BepusdtReturnUrl.trim(),
     }
 
     const initial = {
@@ -504,6 +525,16 @@ export function PaymentSettingsSection({
       WaffoPancakeReturnURL: removeTrailingSlash(
         initialRef.current.WaffoPancakeReturnURL.trim()
       ),
+      BepusdtEnabled: initialRef.current.BepusdtEnabled,
+      BepusdtUrl: removeTrailingSlash(initialRef.current.BepusdtUrl.trim()),
+      BepusdtApiKey: initialRef.current.BepusdtApiKey.trim(),
+      BepusdtFiat: initialRef.current.BepusdtFiat.trim() || 'USD',
+      BepusdtCurrencies: initialRef.current.BepusdtCurrencies.trim(),
+      BepusdtTradeType: initialRef.current.BepusdtTradeType.trim(),
+      BepusdtUnitPrice: initialRef.current.BepusdtUnitPrice,
+      BepusdtMinTopUp: initialRef.current.BepusdtMinTopUp,
+      BepusdtNotifyUrl: initialRef.current.BepusdtNotifyUrl.trim(),
+      BepusdtReturnUrl: initialRef.current.BepusdtReturnUrl.trim(),
     }
 
     const updates: Array<{ key: string; value: string | number | boolean }> = []
@@ -701,6 +732,52 @@ export function PaymentSettingsSection({
       updates.push({ key: 'WaffoPayMethods', value: sanitized.WaffoPayMethods })
     }
 
+    if (sanitized.BepusdtEnabled !== initial.BepusdtEnabled) {
+      updates.push({ key: 'BepusdtEnabled', value: sanitized.BepusdtEnabled })
+    }
+    if (sanitized.BepusdtUrl !== initial.BepusdtUrl) {
+      updates.push({ key: 'BepusdtUrl', value: sanitized.BepusdtUrl })
+    }
+    if (sanitized.BepusdtApiKey) {
+      updates.push({ key: 'BepusdtApiKey', value: sanitized.BepusdtApiKey })
+    }
+    if (sanitized.BepusdtFiat !== initial.BepusdtFiat) {
+      updates.push({ key: 'BepusdtFiat', value: sanitized.BepusdtFiat })
+    }
+    if (sanitized.BepusdtCurrencies !== initial.BepusdtCurrencies) {
+      updates.push({
+        key: 'BepusdtCurrencies',
+        value: sanitized.BepusdtCurrencies,
+      })
+    }
+    if (sanitized.BepusdtTradeType !== initial.BepusdtTradeType) {
+      updates.push({
+        key: 'BepusdtTradeType',
+        value: sanitized.BepusdtTradeType,
+      })
+    }
+    if (sanitized.BepusdtUnitPrice !== initial.BepusdtUnitPrice) {
+      updates.push({
+        key: 'BepusdtUnitPrice',
+        value: sanitized.BepusdtUnitPrice,
+      })
+    }
+    if (sanitized.BepusdtMinTopUp !== initial.BepusdtMinTopUp) {
+      updates.push({ key: 'BepusdtMinTopUp', value: sanitized.BepusdtMinTopUp })
+    }
+    if (sanitized.BepusdtNotifyUrl !== initial.BepusdtNotifyUrl) {
+      updates.push({
+        key: 'BepusdtNotifyUrl',
+        value: sanitized.BepusdtNotifyUrl,
+      })
+    }
+    if (sanitized.BepusdtReturnUrl !== initial.BepusdtReturnUrl) {
+      updates.push({
+        key: 'BepusdtReturnUrl',
+        value: sanitized.BepusdtReturnUrl,
+      })
+    }
+
     const hasWaffoPancakeChanges =
       sanitized.WaffoPancakeMerchantID !== initial.WaffoPancakeMerchantID ||
       sanitized.WaffoPancakePrivateKey.length > 0 ||
@@ -877,13 +954,14 @@ export function PaymentSettingsSection({
           />
           <Tabs defaultValue='general' className='min-w-0'>
             <div className='overflow-x-auto pb-1'>
-              <TabsList className='grid min-w-[44rem] grid-cols-6'>
+              <TabsList className='grid min-w-[50rem] grid-cols-7'>
                 <TabsTrigger value='general'>{t('General')}</TabsTrigger>
                 <TabsTrigger value='epay'>Epay</TabsTrigger>
                 <TabsTrigger value='stripe'>{t('Stripe')}</TabsTrigger>
                 <TabsTrigger value='creem'>Creem</TabsTrigger>
                 <TabsTrigger value='waffo-pancake'>Waffo Pancake</TabsTrigger>
                 <TabsTrigger value='waffo'>Waffo</TabsTrigger>
+                <TabsTrigger value='bepusdt'>BEPUSDT</TabsTrigger>
               </TabsList>
             </div>
 
@@ -998,7 +1076,7 @@ export function PaymentSettingsSection({
                       </FormControl>
                       <FormDescription>
                         {t(
-                          'Configured as PayMethods JSON. The type value decides which payment flow is used: stripe for Stripe, waffo_pancake for Waffo Pancake, and other values are sent to Epay as the type parameter.'
+                          'Configured as PayMethods JSON. The type value decides which payment flow is used: stripe for Stripe, waffo_pancake for Waffo Pancake, bepusdt for BEPUSDT, and other values are sent to Epay as the type parameter.'
                         )}
                       </FormDescription>
                       <FormMessage />
@@ -1609,6 +1687,10 @@ export function PaymentSettingsSection({
                 payMethods={waffoPayMethods}
                 onPayMethodsChange={setWaffoPayMethods}
               />
+            </TabsContent>
+
+            <TabsContent value='bepusdt' className={paymentTabContentClassName}>
+              <BepusdtSettingsSection form={form} />
             </TabsContent>
           </Tabs>
         </SettingsForm>

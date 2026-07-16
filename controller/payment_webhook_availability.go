@@ -108,3 +108,22 @@ func isEpayWebhookConfigured() bool {
 func isEpayWebhookEnabled() bool {
 	return isEpayTopUpEnabled()
 }
+
+func isBepusdtTopUpEnabled() bool {
+	if !isPaymentComplianceConfirmed() {
+		return false
+	}
+	if !setting.BepusdtEnabled {
+		return false
+	}
+	return isBepusdtWebhookConfigured()
+}
+
+func isBepusdtWebhookConfigured() bool {
+	return strings.TrimSpace(setting.BepusdtUrl) != "" &&
+		strings.TrimSpace(setting.BepusdtApiKey) != ""
+}
+
+func isBepusdtWebhookEnabled() bool {
+	return isBepusdtTopUpEnabled()
+}
