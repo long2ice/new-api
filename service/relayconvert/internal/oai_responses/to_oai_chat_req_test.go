@@ -252,6 +252,41 @@ func TestResponsesRequestToChatCompletionsRequestNamespaceToolsFlattened(t *test
 	assert.Equal(t, "apply_patch", gjson.GetBytes(got.Tools[3].Custom, "name").String())
 }
 
+func TestResponsesRequestToChatCompletionsRequestDeveloperRoleMappedToSystem(t *testing.T) {
+	got, err := ResponsesRequestToChatCompletionsRequest(&dto.OpenAIResponsesRequest{
+		Model: "gpt-test",
+		Input: mustRawMessage(t, []map[string]any{
+			{"type": "message", "role": "developer", "content": "be terse"},
+			{"type": "message", "role": "user", "content": "hello"},
+		}),
+	})
+	require.NoError(t, err)
+
+	require.Len(t, got.Messages, 2)
+	assert.Equal(t, "system", got.Messages[0].Role)
+	assert.Equal(t, "user", got.Messages[1].Role)
+}
+
+func TestResponsesRequestToChatCompletionsRequestSystemMessagesCollapsedToHead(t *testing.T) {
+	got, err := ResponsesRequestToChatCompletionsRequest(&dto.OpenAIResponsesRequest{
+		Model:        "gpt-test",
+		Instructions: mustRawMessage(t, "you are codex"),
+		Input: mustRawMessage(t, []map[string]any{
+			{"type": "message", "role": "user", "content": "hello"},
+			{"type": "message", "role": "developer", "content": "be terse"},
+			{"type": "message", "role": "latest_reminder", "content": "reminder"},
+		}),
+	})
+	require.NoError(t, err)
+
+	require.Len(t, got.Messages, 3)
+	assert.Equal(t, "system", got.Messages[0].Role)
+	assert.Equal(t, "you are codex\n\nbe terse", got.Messages[0].Content)
+	assert.Equal(t, "user", got.Messages[1].Role)
+	assert.Equal(t, "user", got.Messages[2].Role)
+	assert.Equal(t, "reminder", got.Messages[2].Content)
+}
+
 func TestResponsesRequestToChatCompletionsRequestNamespacedFunctionCallHistory(t *testing.T) {
 	got, err := ResponsesRequestToChatCompletionsRequest(&dto.OpenAIResponsesRequest{
 		Model: "gpt-test",

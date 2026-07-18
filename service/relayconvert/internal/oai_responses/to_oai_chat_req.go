@@ -40,6 +40,7 @@ func ResponsesRequestToChatCompletionsRequest(req *dto.OpenAIResponsesRequest) (
 	if err != nil {
 		return nil, err
 	}
+	messages = collapseSystemMessagesToHead(messages)
 
 	tools, err := responsesRequestToolsToChat(req.Tools)
 	if err != nil {
@@ -185,15 +186,53 @@ func responsesInputItemToChatMessages(item map[string]any, messages []dto.Messag
 		return append(messages, dto.Message{Role: "tool", ToolCallId: callID, Content: content}), nil
 	}
 
-	role := strings.TrimSpace(common.Interface2String(item["role"]))
-	if role == "" {
-		role = "user"
-	}
+	role := responsesRoleToChatRole(strings.TrimSpace(common.Interface2String(item["role"])))
 	content, err := responsesInputContentToChatContent(item["content"])
 	if err != nil {
 		return nil, err
 	}
 	return append(messages, dto.Message{Role: role, Content: content}), nil
+}
+
+// responsesRoleToChatRole normalizes Responses roles to the four roles Chat
+// Completions upstreams understand. "developer" is the Responses-era successor
+// of "system"; unknown roles (e.g. Codex's "latest_reminder") degrade to
+// "user" instead of failing upstream tokenization.
+func responsesRoleToChatRole(role string) string {
+	switch role {
+	case "system", "developer":
+		return "system"
+	case "assistant", "tool", "user":
+		return role
+	default:
+		return "user"
+	}
+}
+
+// collapseSystemMessagesToHead merges plain-string system messages into a
+// single leading system message. Some chat upstreams (e.g. MiniMax) only
+// accept system as the first message; the reorder is lossless for permissive
+// upstreams. System messages with structured content keep their position.
+func collapseSystemMessagesToHead(messages []dto.Message) []dto.Message {
+	chunks := make([]string, 0, 2)
+	rest := make([]dto.Message, 0, len(messages))
+	for _, msg := range messages {
+		if msg.Role == "system" && len(msg.ToolCalls) == 0 {
+			if text, ok := msg.Content.(string); ok {
+				if strings.TrimSpace(text) != "" {
+					chunks = append(chunks, text)
+				}
+				continue
+			}
+		}
+		rest = append(rest, msg)
+	}
+	if len(chunks) == 0 {
+		return rest
+	}
+	out := make([]dto.Message, 0, len(rest)+1)
+	out = append(out, dto.Message{Role: "system", Content: strings.Join(chunks, "\n\n")})
+	return append(out, rest...)
 }
 
 func responsesInputContentToChatContent(content any) (any, error) {

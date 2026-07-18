@@ -5,6 +5,8 @@
 package nstool
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"strings"
 
@@ -12,7 +14,11 @@ import (
 	"github.com/QuantumNous/new-api/dto"
 )
 
-const separator = "__"
+const (
+	separator = "__"
+	// chatToolNameMaxLen is the OpenAI-compatible limit for tool names.
+	chatToolNameMaxLen = 64
+)
 
 // Tool identifies a function inside a Responses namespace tool.
 type Tool struct {
@@ -21,8 +27,16 @@ type Tool struct {
 }
 
 // FlatName builds the Chat Completions tool name for a namespaced function.
+// Names over the 64-char OpenAI-compatible limit are truncated with a hash
+// suffix; MapFromTools uses the same derivation, so restore stays consistent.
 func FlatName(namespace, name string) string {
-	return namespace + separator + name
+	full := namespace + separator + name
+	if len(full) <= chatToolNameMaxLen {
+		return full
+	}
+	sum := sha256.Sum256([]byte(full))
+	suffix := separator + hex.EncodeToString(sum[:4])
+	return full[:chatToolNameMaxLen-len(suffix)] + suffix
 }
 
 // IsNamespaceType reports whether a Responses tool type groups inner function tools.

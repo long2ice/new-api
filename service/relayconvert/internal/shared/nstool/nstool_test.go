@@ -1,6 +1,8 @@
 package nstool
 
 import (
+	"strings"
+
 	"testing"
 
 	"github.com/QuantumNous/new-api/dto"
@@ -33,6 +35,19 @@ func TestMapFromToolsAndRestoreOutput(t *testing.T) {
 	RestoreOutput(plain, toolMap)
 	assert.Equal(t, "lookup", plain.Name)
 	assert.Empty(t, plain.Namespace)
+}
+
+func TestFlatNameCapsLongNames(t *testing.T) {
+	short := FlatName("multi_agent_v1", "spawn_agent")
+	assert.Equal(t, "multi_agent_v1__spawn_agent", short)
+
+	namespace := strings.Repeat("a", 50)
+	name := strings.Repeat("b", 50)
+	long := FlatName(namespace, name)
+	assert.Len(t, long, 64)
+	// Deterministic: same inputs always produce the same capped name.
+	assert.Equal(t, long, FlatName(namespace, name))
+	assert.NotEqual(t, long, FlatName(namespace, strings.Repeat("c", 50)))
 }
 
 func TestMapFromToolsNoNamespaceTools(t *testing.T) {
