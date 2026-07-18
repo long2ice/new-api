@@ -199,6 +199,85 @@ func TestResponsesRequestToChatCompletionsRequestToolsToolChoiceAndTextFormat(t 
 	assert.True(t, gjson.GetBytes(got.ResponseFormat.JsonSchema, "strict").Bool())
 }
 
+func TestResponsesRequestToChatCompletionsRequestNamespaceToolsFlattened(t *testing.T) {
+	got, err := ResponsesRequestToChatCompletionsRequest(&dto.OpenAIResponsesRequest{
+		Model: "gpt-test",
+		Input: mustRawMessage(t, "hello"),
+		Tools: mustRawMessage(t, []map[string]any{
+			{
+				"type": "function",
+				"name": "lookup",
+			},
+			{
+				"type":        "namespace",
+				"name":        "multi_agent_v1",
+				"description": "Tools for spawning and managing sub-agents.",
+				"tools": []map[string]any{
+					{
+						"type":        "function",
+						"name":        "spawn_agent",
+						"description": "Spawn a sub-agent.",
+						"parameters": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"prompt": map[string]any{"type": "string"},
+							},
+						},
+					},
+					{"type": "function", "name": "wait_agent"},
+				},
+			},
+			{
+				"type": "web_search",
+			},
+			{
+				"type":   "custom",
+				"name":   "apply_patch",
+				"format": map[string]any{"type": "grammar"},
+			},
+		}),
+	})
+	require.NoError(t, err)
+
+	require.Len(t, got.Tools, 4)
+	assert.Equal(t, "function", got.Tools[0].Type)
+	assert.Equal(t, "lookup", got.Tools[0].Function.Name)
+	assert.Equal(t, "function", got.Tools[1].Type)
+	assert.Equal(t, "multi_agent_v1__spawn_agent", got.Tools[1].Function.Name)
+	assert.Equal(t, "Spawn a sub-agent.", got.Tools[1].Function.Description)
+	assert.Equal(t, "function", got.Tools[2].Type)
+	assert.Equal(t, "multi_agent_v1__wait_agent", got.Tools[2].Function.Name)
+	assert.Equal(t, "object", got.Tools[2].Function.Parameters.(map[string]any)["type"])
+	assert.Equal(t, "custom", got.Tools[3].Type)
+	assert.Equal(t, "apply_patch", gjson.GetBytes(got.Tools[3].Custom, "name").String())
+}
+
+func TestResponsesRequestToChatCompletionsRequestNamespacedFunctionCallHistory(t *testing.T) {
+	got, err := ResponsesRequestToChatCompletionsRequest(&dto.OpenAIResponsesRequest{
+		Model: "gpt-test",
+		Input: mustRawMessage(t, []map[string]any{
+			{
+				"type":      "function_call",
+				"namespace": "multi_agent_v1",
+				"name":      "spawn_agent",
+				"call_id":   "call_1",
+				"arguments": `{"prompt":"do x"}`,
+			},
+			{
+				"type":    "function_call_output",
+				"call_id": "call_1",
+				"output":  "agent-1",
+			},
+		}),
+	})
+	require.NoError(t, err)
+
+	toolCalls := got.Messages[0].ParseToolCalls()
+	require.Len(t, toolCalls, 1)
+	assert.Equal(t, "multi_agent_v1__spawn_agent", toolCalls[0].Function.Name)
+	assert.Equal(t, "tool", got.Messages[1].Role)
+}
+
 func TestResponsesRequestToChatCompletionsRequestCustomToolCallPreservesRawShape(t *testing.T) {
 	got, err := ResponsesRequestToChatCompletionsRequest(&dto.OpenAIResponsesRequest{
 		Model: "gpt-test",

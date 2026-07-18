@@ -46,6 +46,11 @@ func OaiChatToResponsesHandler(c *gin.Context, info *relaycommon.RelayInfo, resp
 	if !ok {
 		return nil, types.NewOpenAIError(fmt.Errorf("expected OpenAI responses response, got %T", convertResult.Value), types.ErrorCodeBadResponseBody, http.StatusInternalServerError)
 	}
+	if toolMap := relayconvert.NamespaceToolMapFromRequest(info.Request); toolMap != nil {
+		for i := range responsesResp.Output {
+			relayconvert.RestoreNamespacedOutput(&responsesResp.Output[i], toolMap)
+		}
+	}
 	usage := convertResult.Usage
 	if usage == nil || usage.TotalTokens == 0 {
 		text := service.ExtractOutputTextFromResponses(responsesResp)
@@ -77,8 +82,17 @@ func OaiChatToResponsesStreamHandler(c *gin.Context, info *relaycommon.RelayInfo
 		return nil, types.NewOpenAIError(err, types.ErrorCodeBadResponse, http.StatusInternalServerError)
 	}
 	streamErr := (*types.NewAPIError)(nil)
+	toolMap := relayconvert.NamespaceToolMapFromRequest(info.Request)
 
 	sendEvent := func(event relayconvert.ChatToResponsesStreamEvent) bool {
+		if toolMap != nil {
+			relayconvert.RestoreNamespacedOutput(event.Payload.Item, toolMap)
+			if event.Payload.Response != nil {
+				for i := range event.Payload.Response.Output {
+					relayconvert.RestoreNamespacedOutput(&event.Payload.Response.Output[i], toolMap)
+				}
+			}
+		}
 		data, err := common.Marshal(event.Payload)
 		if err != nil {
 			streamErr = types.NewOpenAIError(err, types.ErrorCodeJsonMarshalFailed, http.StatusInternalServerError)

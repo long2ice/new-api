@@ -8,6 +8,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/dto"
+	"github.com/QuantumNous/new-api/service/relayconvert/internal/shared/nstool"
 )
 
 const (
@@ -279,6 +280,11 @@ func responsesFunctionCallItemToChatToolCall(item map[string]any) (dto.ToolCallR
 	if name == "" {
 		return dto.ToolCallRequest{}, errors.New("function_call item is missing name")
 	}
+	// History items for namespaced tools carry the namespace separately; use
+	// the flattened name so it matches the tool list sent to the upstream.
+	if namespace := strings.TrimSpace(common.Interface2String(item["namespace"])); namespace != "" {
+		name = nstool.FlatName(namespace, name)
+	}
 	return dto.ToolCallRequest{
 		ID:   responsesCallID(item),
 		Type: "function",
@@ -331,7 +337,8 @@ func responsesRequestToolsToChat(raw json.RawMessage) ([]dto.ToolCallRequest, er
 	out := make([]dto.ToolCallRequest, 0, len(tools))
 	for _, tool := range tools {
 		toolType := strings.TrimSpace(common.Interface2String(tool["type"]))
-		if toolType == "function" {
+		switch {
+		case toolType == "function":
 			out = append(out, dto.ToolCallRequest{
 				Type: "function",
 				Function: dto.FunctionRequest{
@@ -340,19 +347,60 @@ func responsesRequestToolsToChat(raw json.RawMessage) ([]dto.ToolCallRequest, er
 					Parameters:  tool["parameters"],
 				},
 			})
-			continue
+		case toolType == "custom":
+			rawTool, err := common.Marshal(tool)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, dto.ToolCallRequest{
+				Type:   toolType,
+				Custom: rawTool,
+			})
+		case nstool.IsNamespaceType(toolType):
+			out = append(out, responsesNamespaceToolsToChat(tool)...)
+		default:
+			// Remaining Responses-only tool types (web_search, local_shell, ...)
+			// have no Chat Completions equivalent; drop them instead of
+			// forwarding payloads the upstream will reject.
 		}
-
-		rawTool, err := common.Marshal(tool)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, dto.ToolCallRequest{
-			Type:   toolType,
-			Custom: rawTool,
-		})
 	}
 	return out, nil
+}
+
+// responsesNamespaceToolsToChat flattens the inner tools of a namespace /
+// mcp_server tool into plain function tools named "<namespace>__<name>".
+// The response side restores the split via nstool.MapFromTools so clients
+// that route calls by an exact (namespace, name) match keep working.
+func responsesNamespaceToolsToChat(tool map[string]any) []dto.ToolCallRequest {
+	namespace := strings.TrimSpace(common.Interface2String(tool["name"]))
+	inner, ok := tool["tools"].([]any)
+	if namespace == "" || !ok {
+		return nil
+	}
+	out := make([]dto.ToolCallRequest, 0, len(inner))
+	for _, item := range inner {
+		innerTool, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		name := strings.TrimSpace(common.Interface2String(innerTool["name"]))
+		if name == "" {
+			continue
+		}
+		params, _ := innerTool["parameters"].(map[string]any)
+		if params == nil {
+			params = map[string]any{"type": "object", "properties": map[string]any{}}
+		}
+		out = append(out, dto.ToolCallRequest{
+			Type: "function",
+			Function: dto.FunctionRequest{
+				Name:        nstool.FlatName(namespace, name),
+				Description: common.Interface2String(innerTool["description"]),
+				Parameters:  params,
+			},
+		})
+	}
+	return out
 }
 
 func responsesRequestToolChoiceToChat(raw json.RawMessage) (any, error) {
@@ -374,6 +422,9 @@ func responsesRequestToolChoiceToChat(raw json.RawMessage) (any, error) {
 	if common.Interface2String(choice["type"]) == "function" {
 		name := strings.TrimSpace(common.Interface2String(choice["name"]))
 		if name != "" {
+			if namespace := strings.TrimSpace(common.Interface2String(choice["namespace"])); namespace != "" {
+				name = nstool.FlatName(namespace, name)
+			}
 			return map[string]any{
 				"type": "function",
 				"function": map[string]any{
